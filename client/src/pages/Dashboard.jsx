@@ -22,7 +22,7 @@ export default function Dashboard() {
 
   async function loadPayments() {
     try {
-      const { data } = await API.get("/payments");
+      const { data } = await API.get("/api/payments");
       setPayments(data);
     } catch (err) {
       console.log(err);
@@ -30,7 +30,7 @@ export default function Dashboard() {
   }
 
   async function confirmDelete() {
-    await API.delete(`/payments/${deleteModal}`);
+    await API.delete(`/api/payments/${deleteModal}`);
     setDeleteModal(null);
     loadPayments();
   }

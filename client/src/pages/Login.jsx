@@ -13,7 +13,7 @@ export default function Login() {
   async function handleLogin(e) {
     e.preventDefault();
     try {
-      const { data } = await API.post("/auth/login", { email, password });
+      const { data } = await API.post("/api/auth/login", { email, password });
       localStorage.setItem("token", data.token);
       setAuthToken(data.token);
       nav("/dashboard");
