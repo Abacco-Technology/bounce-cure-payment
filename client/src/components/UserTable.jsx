@@ -109,7 +109,7 @@ export default function UserTable({ users, onAddPayment, searchTerm }) {
                                                         <FiMail className="text-blue-600 text-xs" />
                                                     </div>
                                                     <span className="text-sm font-bold text-gray-800">{user.emailLimit}</span>
-                                                    <div className="text-xs text-gray-500">Email</div>
+                                                    <div className="text-xs text-gray-500">Email Campaign</div>
                                                 </div>
 
                                                 {/* SMS Card */}
@@ -136,7 +136,7 @@ export default function UserTable({ users, onAddPayment, searchTerm }) {
                                                         <FiUsers className="text-amber-600 text-xs" />
                                                     </div>
                                                     <span className="text-sm font-bold text-gray-800">{user.contactLimit}</span>
-                                                    <div className="text-xs text-gray-500">Contacts</div>
+                                                    <div className="text-xs text-gray-500">Email Verification</div>
                                                 </div>
                                             </div>
                                         </div>
