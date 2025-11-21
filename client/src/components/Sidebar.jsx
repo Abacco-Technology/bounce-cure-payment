@@ -1,9 +1,39 @@
 import { useState } from "react";
 import { FiDollarSign, FiUsers, FiLogOut, FiChevronRight, FiChevronLeft } from "react-icons/fi";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 export default function Sidebar({ setLogoutModal }) {
     const [expanded, setExpanded] = useState(false);
+    const navigate = useNavigate();
+
+    // local logout logic (customize to your auth)
+    function performLogout() {
+        try {
+            // example cleanup - adjust to your auth strategy
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            // if you use cookies or other state, clear them here
+
+            // navigate to login
+            navigate("/login");
+        } catch (err) {
+            console.error("Logout error:", err);
+        }
+    }
+
+    function handleLogoutClick() {
+        // If parent provided setLogoutModal (function), use it to open modal
+        if (typeof setLogoutModal === "function") {
+            setLogoutModal(true);
+            return;
+        }
+
+        // fallback: simple browser confirm
+        const ok = window.confirm("Are you sure you want to log out… or are you just testing me? 😉");
+        if (ok) {
+            performLogout();
+        }
+    }
 
     return (
         <div
@@ -27,6 +57,7 @@ export default function Sidebar({ setLogoutModal }) {
                     <button
                         onClick={() => setExpanded(!expanded)}
                         className="p-2 rounded-lg hover:bg-gray-100 transition-colors flex-shrink-0"
+                        aria-label={expanded ? "Collapse sidebar" : "Expand sidebar"}
                     >
                         {expanded ? (
                             <FiChevronLeft className="text-gray-500 text-lg" />
@@ -77,10 +108,11 @@ export default function Sidebar({ setLogoutModal }) {
                 <div className="p-2 border-t border-gray-100">
                     <button
                         className={`flex items-center w-full p-3 rounded-lg font-medium transition-all duration-300 ${expanded
-                                ? "text-red-600 hover:bg-red-50 gap-3"
-                                : "text-red-600 hover:bg-red-50 justify-center"
+                            ? "text-red-600 hover:bg-red-50 gap-3"
+                            : "text-red-600 hover:bg-red-50 justify-center"
                             }`}
-                        onClick={() => setLogoutModal(true)}
+                        onClick={handleLogoutClick}
+                        aria-label="Logout"
                     >
                         <FiLogOut className="text-lg flex-shrink-0" />
                         {expanded && (

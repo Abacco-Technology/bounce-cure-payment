@@ -226,7 +226,7 @@ export default function Dashboard() {
             className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl"
           >
             <h2 className="text-xl font-bold mb-4">Logout Confirmation</h2>
-            <p className="text-gray-700 mb-6">Are you sure you want to logout of your account?</p>
+            <p className="text-gray-700 mb-6">Logging out? 👀 Bold move. Are you sure?</p>
 
             <div className="flex justify-end gap-3">
               <button
