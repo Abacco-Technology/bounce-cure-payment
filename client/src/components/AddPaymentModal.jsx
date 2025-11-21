@@ -20,7 +20,7 @@ export default function AddPaymentModal({ user, close, onSuccess }) {
         billingAddress: "",
         paymentDate: "",
         nextPaymentDate: "",
-        status: "success",
+        status: "succeeded",
         notified: false,
         emailSendCredits: 0,
         emailVerificationCredits: 0,
