@@ -36,7 +36,7 @@ app.use("/api/admin/chat", adminChatRoutes);
 app.use("/api/admin/users", require("./routes/users"));
 
 // Start Server
-const PORT = process.env.PORT || 5001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log("Backend running on http://localhost:" + PORT);
 });

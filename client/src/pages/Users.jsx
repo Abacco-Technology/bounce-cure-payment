@@ -14,20 +14,38 @@ export default function Users() {
     const [sidebarExpanded, setSidebarExpanded] = useState(false);
     const [loading, setLoading] = useState(true);
 
-    async function loadUsers() {
-        setLoading(true);
-        try {
-            const token = localStorage.getItem("token");
-            setAuthToken(token);
+async function loadUsers() {
+    setLoading(true);
+    try {
+        const token = localStorage.getItem("token");
 
-            const { data } = await API.get("/api/users");
-            setUsers(data);
-        } catch (error) {
-            console.error("Error loading users:", error);
-        } finally {
-            setLoading(false);
+        if (!token) {
+            console.warn("No auth token found");
+            setUsers([]);
+            return;
         }
+
+        setAuthToken(token);
+
+        const res = await API.get("/api/users");
+
+        // SAFETY: Always force array
+        const usersData = Array.isArray(res.data) ? res.data : [];
+        setUsers(usersData);
+
+    } catch (error) {
+        console.error("Error loading users:", error);
+
+        // Optional: handle auth errors
+        if (error.response?.status === 401) {
+            console.warn("Unauthorized, token expired");
+            setUsers([]);
+        }
+    } finally {
+        setLoading(false);
     }
+}
+
 
     useEffect(() => {
         loadUsers();
