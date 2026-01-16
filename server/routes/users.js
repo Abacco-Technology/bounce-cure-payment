@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../db");
+const { query } = require("../db");
 console.log("Users route file loaded");
 
 
@@ -31,19 +31,19 @@ router.use((req, res, next) => {
 // =========================
 router.get("/", async (req, res) => {
     try {
-        const query = `
-      SELECT
-        "id","firstName","lastName",
-        "email","googleId","profileImgUrl",
-        "createdAt","updatedAt",
-        "plan","hasPurchasedBefore","contactLimit",
-        "emailLimit","smsCredits","whatsappCredits",
-        "isVerified","is2FAEnabled"
-      FROM "User"
-      ORDER BY "id" DESC;
-    `;
+        const queryText = `
+          SELECT
+            "id","firstName","lastName",
+            "email","googleId","profileImgUrl",
+            "createdAt","updatedAt",
+            "plan","hasPurchasedBefore","contactLimit",
+            "emailLimit","smsCredits","whatsappCredits",
+            "isVerified","is2FAEnabled"
+          FROM "User"
+          ORDER BY "id" DESC;
+        `;
 
-        const result = await db.query(query);
+        const result = await query(queryText);
         res.json(result.rows);
 
     } catch (err) {
@@ -51,6 +51,7 @@ router.get("/", async (req, res) => {
         res.status(500).json({ message: "Database Error" });
     }
 });
+
 
 // =========================
 // GET SINGLE USER + PAYMENTS
@@ -60,29 +61,29 @@ router.get("/:id", async (req, res) => {
 
     try {
         const userQuery = `
-      SELECT
-        "id","firstName","lastName","email",
-        "plan","contactLimit","emailLimit",
-        "smsCredits","whatsappCredits",
-        "createdAt","updatedAt"
-      FROM "User"
-      WHERE "id" = $1;
-    `;
+          SELECT
+            "id","firstName","lastName","email",
+            "plan","contactLimit","emailLimit",
+            "smsCredits","whatsappCredits",
+            "createdAt","updatedAt"
+          FROM "User"
+          WHERE "id" = $1;
+        `;
 
-        const user = await db.query(userQuery, [id]);
+        const user = await query(userQuery, [id]);
 
         if (user.rows.length === 0) {
             return res.status(404).json({ message: "User not found" });
         }
 
         const paymentsQuery = `
-      SELECT *
-      FROM "Payment"
-      WHERE "userId" = $1
-      ORDER BY "id" DESC;
-    `;
+          SELECT *
+          FROM "Payment"
+          WHERE "userId" = $1
+          ORDER BY "id" DESC;
+        `;
 
-        const payments = await db.query(paymentsQuery, [id]);
+        const payments = await query(paymentsQuery, [id]);
 
         res.json({
             user: user.rows[0],
@@ -94,5 +95,6 @@ router.get("/:id", async (req, res) => {
         res.status(500).json({ message: "Database Error" });
     }
 });
+
 
 module.exports = router;

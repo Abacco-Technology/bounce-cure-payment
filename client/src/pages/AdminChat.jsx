@@ -4,7 +4,7 @@ import { MessageCircle, Send, X, Search, Circle, Plus, User } from "lucide-react
 import Sidebar from "../components/Sidebar";
 import Topbar from "../components/Topbar";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API_URL = import.meta.env.VITE_API_BASE_URL;
 
 export default function AdminChat() {
   const [conversations, setConversations] = useState([]);
@@ -84,57 +84,53 @@ export default function AdminChat() {
     }
   };
 
-  const loadConversations = async () => {
-    try {
-      const res = await fetch(`${API_URL}/api/admin/chat/conversations`, {
-        headers: adminHeaders,
-      });
-      const data = await res.json();
+const loadConversations = async () => {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/chat/conversations`, {
+      headers: adminHeaders,
+    });
 
-      if (Array.isArray(data)) {
-        const newUnread = { ...unreadCounts };
+    const data = await res.json();
 
-        for (const conv of data) {
-          const userId = conv.userId;
-          const lastSeen = lastSeenPerUser[userId];
+    // Always keep conversations as array
+    setConversations(Array.isArray(data) ? data : []);
 
-          const msgRes = await fetch(
-            `${API_URL}/api/admin/chat/messages/${userId}`,
-            { headers: adminHeaders }
-          );
-          const msgs = await msgRes.json();
+    if (Array.isArray(data)) {
+      const newUnread = { ...unreadCounts };
 
-          if (!Array.isArray(msgs)) continue;
+      for (const conv of data) {
+        const userId = conv.userId;
+        const lastSeen = lastSeenPerUser[userId];
 
-          let count = 0;
-          if (!lastSeen) {
-            count = msgs.filter(m => m.sender === "USER").length;
-          } else {
-            const seenTime = new Date(lastSeen);
-            count = msgs.filter(m =>
-              m.sender === "USER" && new Date(m.createdAt) > seenTime
-            ).length;
-          }
+        const msgRes = await fetch(
+          `${API_URL}/api/admin/chat/messages/${userId}`,
+          { headers: adminHeaders }
+        );
 
-          const prev = newUnread[userId] || 0;
-          if (count > prev && selectedUser?.userId !== userId) {
-            const latest = msgs[msgs.length - 1];
-            if (latest?.text) {
-              addToast(`${conv.firstName} ${conv.lastName}`, latest.text);
-            }
-          }
+        const msgs = await msgRes.json();
+        if (!Array.isArray(msgs)) continue;
 
-          newUnread[userId] = count;
+        let count = 0;
+        if (!lastSeen) {
+          count = msgs.filter(m => m.sender === "USER").length;
+        } else {
+          const seenTime = new Date(lastSeen);
+          count = msgs.filter(
+            m => m.sender === "USER" && new Date(m.createdAt) > seenTime
+          ).length;
         }
 
-        setUnreadCounts(newUnread);
+        newUnread[userId] = count;
       }
 
-      setConversations(data || []);
-    } catch (err) {
-      console.error("Failed to load conversations", err);
+      setUnreadCounts(newUnread);
     }
-  };
+
+  } catch (err) {
+    console.error("Failed to load conversations", err);
+  }
+};
+
 
   const loadMessages = async (userId) => {
     try {
@@ -153,56 +149,76 @@ export default function AdminChat() {
     }
   };
 
-  const sendMessage = async () => {
-    if (!input.trim() || !selectedUser) return;
+const sendMessage = async () => {
+  if (!input.trim() || !selectedUser) return;
 
-    try {
-      await fetch(`${API_URL}/api/admin/chat/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: "admin-token",
-        },
-        body: JSON.stringify({
-          userId: selectedUser.userId,
-          message: input,
-        }),
-      });
+  try {
+    // Ensure conversation exists
+    await fetch(`${API_URL}/api/admin/chat/start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "admin-token"
+      },
+      body: JSON.stringify({ userId: selectedUser.userId })
+    });
 
-      setInput("");
-      loadMessages(selectedUser.userId);
-      loadConversations();
-    } catch (err) {
-      console.error("Send failed", err);
-    }
-  };
+    // Send message
+    await fetch(`${API_URL}/api/admin/chat/send`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "admin-token",
+      },
+      body: JSON.stringify({
+        userId: selectedUser.userId,
+        message: input,
+      }),
+    });
 
-  const startNewChat = (user) => {
-    // Check if conversation already exists
-    const existingConv = conversations.find(c => c.userId === user.userId);
-    
-    if (existingConv) {
-      // If exists, just select it
-      setSelectedUser(existingConv);
-    } else {
-      // Create new conversation entry
-      const newConv = {
-        userId: user.userId,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        lastMessage: "",
-        lastMessageAt: new Date().toISOString()
-      };
-      
-      // Add to conversations list
-      setConversations(data || []);
-      setSelectedUser(newConv);
-    }
-    
+    setInput("");
+    loadMessages(selectedUser.userId);
+    loadConversations();
+  } catch (err) {
+    console.error("Send failed", err);
+  }
+};
+
+
+const startNewChat = async (user) => {
+  try {
+    const res = await fetch(`${API_URL}/api/admin/chat/start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "admin-token"
+      },
+      body: JSON.stringify({ userId: user.userId })
+    });
+
+    const conv = await res.json();
+
+    const newConv = {
+      userId: user.userId,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      lastMessage: "",
+      lastMessageAt: null
+    };
+
+    setConversations(prev =>
+      Array.isArray(prev) ? [newConv, ...prev] : [newConv]
+    );
+
+    setSelectedUser(newConv);
     setShowNewChatModal(false);
     setUserSearchTerm("");
-  };
+  } catch (err) {
+    console.error("Start chat failed", err);
+  }
+};
+
 
   useEffect(() => {
     loadConversations();
@@ -234,11 +250,13 @@ export default function AdminChat() {
     return acc;
   }, {});
 
-  const filteredConversations = conversations.filter(c => {
-    if (!searchTerm) return true;
-    const fullName = `${c.firstName} ${c.lastName}`.toLowerCase();
-    return fullName.includes(searchTerm.toLowerCase());
-  });
+const safeConversations = Array.isArray(conversations) ? conversations : [];
+
+const filteredConversations = safeConversations.filter(c => {
+  if (!searchTerm) return true;
+  const fullName = `${c.firstName} ${c.lastName}`.toLowerCase();
+  return fullName.includes(searchTerm.toLowerCase());
+});
 
   const filteredUsers = allUsers.filter(user => {
     if (!userSearchTerm) return true;
@@ -448,9 +466,16 @@ export default function AdminChat() {
                               {/* Content */}
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between mb-1">
-                                  <h3 className="font-semibold text-slate-900 text-sm">
+                                  <div className="flex flex-col">
+                                <h3 className="font-semibold text-slate-900 text-sm">
                                     {c.firstName} {c.lastName}
-                                  </h3>
+                                </h3>
+                                <span className="text-[11px] text-slate-400 truncate">
+                                    {c.email}
+                                </span>
+                                </div>
+
+                                  
                                   {unreadCounts[c.userId] > 0 && (
                                     <span className="flex items-center justify-center min-w-[22px] h-[22px] bg-gradient-to-br from-emerald-500 to-teal-600 text-white text-xs font-bold rounded-full px-1.5 shadow-lg">
                                       {unreadCounts[c.userId]}
